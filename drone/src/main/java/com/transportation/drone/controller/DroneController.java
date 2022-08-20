@@ -18,13 +18,13 @@ public class DroneController {
     }
 
     @PatchMapping("/{id}/load")
-    public Drone load(@PathVariable("id") Long id, @RequestBody DroneLoadRequest droneLoadRequest) {
+    public Drone load(@PathVariable("id") long id, @RequestBody DroneLoadRequest droneLoadRequest) {
         return new Drone();
     }
 
     @GetMapping("/{id}/load")
-    public LoadResponse getLoad(@PathVariable("id") Long id){
-        return new LoadResponse();
+    public LoadResponse getLoad(@PathVariable("id") long id){
+        return new LoadResponse(id);
     }
 
     @GetMapping("/available")

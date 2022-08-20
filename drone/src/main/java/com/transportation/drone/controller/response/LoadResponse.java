@@ -1,4 +1,3 @@
 package com.transportation.drone.controller.response;
 
-public class LoadResponse {
-}
+public record LoadResponse(long id) {}
