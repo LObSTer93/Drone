@@ -1,39 +1,47 @@
 package com.transportation.drone.controller;
 
 import com.transportation.drone.controller.request.DroneCreateRequest;
-import com.transportation.drone.controller.request.DroneLoadRequest;
-import com.transportation.drone.controller.response.LoadResponse;
 import com.transportation.drone.model.Drone;
+import com.transportation.drone.model.Medication;
+import com.transportation.drone.service.DroneService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Set;
 
 @RestController
 @RequestMapping("/drones")
+@RequiredArgsConstructor
 public class DroneController {
+
+    private final DroneService droneService;
 
     @PostMapping()
     public Drone register(@RequestBody DroneCreateRequest droneCreateRequest) {
-        return new Drone();
+        return droneService.create(
+                droneCreateRequest.serialNumber(), droneCreateRequest.Model(),
+                droneCreateRequest.weightLimit(), droneCreateRequest.batteryCapacity()
+        );
     }
 
-    @PatchMapping("/{id}/load")
-    public Drone load(@PathVariable("id") long id, @RequestBody DroneLoadRequest droneLoadRequest) {
-        return new Drone();
+    @PatchMapping("/{serialNumber}/load")
+    public Drone load(@PathVariable("serialNumber") String serialNumber, @RequestBody List<Medication> medications) {
+        return droneService.updateLoad(serialNumber, medications);
     }
 
-    @GetMapping("/{id}/load")
-    public LoadResponse getLoad(@PathVariable("id") long id){
-        return new LoadResponse(id);
+    @GetMapping("/{serialNumber}/load")
+    public List<Medication> getLoad(@PathVariable("serialNumber") String serialNumber) {
+        return droneService.getLoad(serialNumber);
     }
 
     @GetMapping("/available")
-    public Set<Drone> getAvailable() {
-        return Set.of(new Drone(), new Drone());
+    public Set<Drone> getAvailableForLoading() {
+        return droneService.getAvailableForLoading();
     }
 
-    @GetMapping("/{id}/battery")
-    public String getBatteryLevel(@PathVariable("id") Long id){
-        return "LOADING";
+    @GetMapping("/{serialNumber}/battery")
+    public int getBatteryLevel(@PathVariable("serialNumber") String serialNumber) {
+        return droneService.getBatteryLevel(serialNumber);
     }
 }
