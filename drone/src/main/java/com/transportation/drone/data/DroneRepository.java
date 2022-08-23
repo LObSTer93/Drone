@@ -1,14 +1,10 @@
 package com.transportation.drone.data;
 
-import com.transportation.drone.model.Drone;
+import com.transportation.drone.data.dao.DroneDao;
+import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
-import java.util.Set;
 
-public interface DroneRepository {
-    Drone create(String serialNumber, String Model, int weightLimit, int batteryCapacity);
-
-    Optional<Drone> getBySerialNumber(String serialNumber);
-
-    Set<Drone> getAll();
+public interface DroneRepository extends MongoRepository<DroneDao, String> {
+    Optional<DroneDao> findBySerialNumber(String serialNumber);
 }

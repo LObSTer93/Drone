@@ -3,7 +3,7 @@ package com.transportation.drone.model;
 import java.util.List;
 import java.util.Objects;
 
-public record Drone(String serialNumber, String Model, int weightLimit, int batteryCapacity, List<Medication> medicationList) {
+public record Drone(String serialNumber, String model, int weightLimit, int batteryCapacity, List<Medication> medicationList) {
 
     @Override
     public boolean equals(Object o) {

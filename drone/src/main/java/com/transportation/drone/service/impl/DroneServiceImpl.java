@@ -1,15 +1,17 @@
 package com.transportation.drone.service.impl;
 
 import com.transportation.drone.data.DroneRepository;
+import com.transportation.drone.data.dao.DroneDao;
 import com.transportation.drone.model.Drone;
 import com.transportation.drone.model.Medication;
 import com.transportation.drone.service.DroneService;
+import com.transportation.drone.util.DroneMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,55 +20,60 @@ import java.util.stream.Collectors;
 public class DroneServiceImpl implements DroneService {
 
     private final DroneRepository droneRepository;
+    private final DroneMapper droneMapper;
 
     @Override
-    public Drone create(String serialNumber, String Model, int weightLimit, int batteryCapacity) {
-        return droneRepository.create(serialNumber, Model, weightLimit, batteryCapacity);
+    public Drone create(String serialNumber, String model, int weightLimit, int batteryCapacity) {
+        DroneDao droneDao = new DroneDao(serialNumber, model, weightLimit, batteryCapacity, new LinkedList<>());
+        droneDao = droneRepository.insert(droneDao);
+        return droneMapper.daoToModel(droneDao);
     }
 
     @Override
     public Drone updateLoad(String serialNumber, List<Medication> medicationList) {
-        Drone drone = droneRepository.getBySerialNumber(serialNumber).orElseThrow();
-        int currentWeight = drone.medicationList().stream()
+        DroneDao droneDao = droneRepository.findBySerialNumber(serialNumber).orElseThrow();
+        int currentWeight = droneDao.medicationList().stream()
                 .mapToInt(Medication::weight)
                 .sum();
         int addingWeight = medicationList.stream()
                 .mapToInt(Medication::weight)
                 .sum();
-        if(drone.weightLimit() - currentWeight < addingWeight) {
+        if (droneDao.weightLimit() - currentWeight < addingWeight) {
             throw new RuntimeException();
         }
-        drone.medicationList().addAll(medicationList);
-        return drone;
+        droneDao.medicationList().addAll(medicationList);
+        droneDao = droneRepository.save(droneDao);
+        return droneMapper.daoToModel(droneDao);
     }
 
     @Override
     public List<Medication> getLoad(String serialNumber) {
-        Drone drone = droneRepository.getBySerialNumber(serialNumber).orElseThrow();
-        return drone.medicationList();
+        DroneDao droneDao = droneRepository.findBySerialNumber(serialNumber).orElseThrow();
+        return droneDao.medicationList();
     }
 
     @Override
     public Set<Drone> getAvailableForLoading() {
-        Set<Drone> droneList = droneRepository.getAll();
-        Map<String, Integer> currentWeightBySerialNumberMap = droneList.stream()
+        List<DroneDao> droneDaoList = droneRepository.findAll();
+        Map<String, Integer> currentWeightBySerialNumberMap = droneDaoList.stream()
                 .collect(Collectors.toMap(
-                        Drone::serialNumber,
-                        drone -> drone.medicationList().stream()
+                        DroneDao::serialNumber,
+                        droneDao -> droneDao.medicationList().stream()
                                 .mapToInt(Medication::weight)
                                 .sum()
                 ));
-        return droneList.stream()
-                .filter(drone -> {
-                    Integer currentWeight = currentWeightBySerialNumberMap.get(drone.serialNumber());
-                    return currentWeight < drone.weightLimit();
+        return droneDaoList.stream()
+                .filter(droneDao -> {
+                    Integer currentWeight = currentWeightBySerialNumberMap.get(droneDao.serialNumber());
+                    return currentWeight < droneDao.weightLimit();
                 })
+                .map(droneMapper::daoToModel)
                 .collect(Collectors.toSet());
     }
 
     @Override
     public int getBatteryLevel(String serialNumber) {
-        Drone drone = droneRepository.getBySerialNumber(serialNumber).orElseThrow();
-        return drone.batteryCapacity();
+        DroneDao droneDao = droneRepository.findBySerialNumber(serialNumber).orElseThrow();
+        return droneDao.batteryCapacity();
     }
 }

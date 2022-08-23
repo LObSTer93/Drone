@@ -1,3 +1,3 @@
 package com.transportation.drone.controller.request;
 
-public record DroneCreateRequest(String serialNumber, String Model, int weightLimit, int batteryCapacity) {}
+public record DroneCreateRequest(String serialNumber, String model, int weightLimit, int batteryCapacity) {}
