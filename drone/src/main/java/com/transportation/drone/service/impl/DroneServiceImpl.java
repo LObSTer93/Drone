@@ -22,6 +22,8 @@ public class DroneServiceImpl implements DroneService {
     private final DroneRepository droneRepository;
     private final DroneMapper droneMapper;
 
+    public static final String LOAD_ERROR = "The drone with serial number %s can not carry the added load";
+
     @Override
     public Drone create(String serialNumber, String model, int weightLimit, int batteryCapacity) {
         DroneDao droneDao = new DroneDao(serialNumber, model, weightLimit, batteryCapacity, new LinkedList<>());
@@ -39,7 +41,7 @@ public class DroneServiceImpl implements DroneService {
                 .mapToInt(Medication::weight)
                 .sum();
         if (droneDao.weightLimit() - currentWeight < addingWeight) {
-            throw new RuntimeException();
+            throw new RuntimeException(String.format(LOAD_ERROR, serialNumber));
         }
         droneDao.medicationList().addAll(medicationList);
         droneDao = droneRepository.save(droneDao);

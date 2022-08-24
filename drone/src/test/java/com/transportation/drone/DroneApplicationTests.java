@@ -19,8 +19,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.transportation.drone.service.impl.DroneServiceImpl.LOAD_ERROR;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -66,7 +68,11 @@ class DroneApplicationTests {
     private Drone registerDrone(DroneCreateRequest droneCreateRequest) throws Exception {
         String droneCreateRequestJSON = objectMapper.writeValueAsString(droneCreateRequest);
 
-        MvcResult mvcResult = mockMvc.perform(post("/drones").contentType(MediaType.APPLICATION_JSON).content(droneCreateRequestJSON)).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = mockMvc.perform(
+                post("/drones")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(droneCreateRequestJSON)
+        ).andExpect(status().isOk()).andReturn();
         String droneString = mvcResult.getResponse().getContentAsString();
         return objectMapper.readValue(droneString, Drone.class);
     }
@@ -77,6 +83,19 @@ class DroneApplicationTests {
 
         Drone drone = loadDrone();
         assertEquals(2, drone.medicationList().size());
+        loadDrone();
+    }
+
+    @Test
+    public void loadError() throws Exception {
+        registerDrone();
+
+        try {
+            Drone drone = loadDrone(SERIAL_NUMBER, 300, 300);
+        } catch (Exception e) {
+            assertTrue(e.getCause() instanceof RuntimeException);
+            assertEquals(String.format(LOAD_ERROR, SERIAL_NUMBER), e.getCause().getLocalizedMessage());
+        }
     }
 
     private Drone loadDrone() throws Exception {
@@ -84,10 +103,16 @@ class DroneApplicationTests {
     }
 
     private Drone loadDrone(String serialNumber, int... weights) throws Exception {
-        List<Medication> medicationList = Arrays.stream(weights).mapToObj(weight -> new Medication("medicationName" + weight, weight, "medicationCode" + weight)).collect(Collectors.toList());
+        List<Medication> medicationList = Arrays.stream(weights)
+                .mapToObj(weight -> new Medication("medicationName" + weight, weight, "medicationCode" + weight))
+                .collect(Collectors.toList());
         String medicationListJSON = objectMapper.writeValueAsString(medicationList);
 
-        MvcResult mvcResult = mockMvc.perform(patch("/drones/" + serialNumber + "/load").contentType(MediaType.APPLICATION_JSON).content(medicationListJSON)).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = mockMvc.perform(
+                patch("/drones/" + serialNumber + "/load")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(medicationListJSON)
+        ).andExpect(status().isOk()).andReturn();
 
         String droneString = mvcResult.getResponse().getContentAsString();
         return objectMapper.readValue(droneString, Drone.class);
@@ -98,7 +123,9 @@ class DroneApplicationTests {
         registerDrone();
         loadDrone();
 
-        MvcResult mvcResult = mockMvc.perform(get("/drones/" + SERIAL_NUMBER + "/load")).andExpect(status().isOk()).andReturn();
+        MvcResult mvcResult = mockMvc.perform(
+                get("/drones/" + SERIAL_NUMBER + "/load")
+        ).andExpect(status().isOk()).andReturn();
 
         String medicationListString = mvcResult.getResponse().getContentAsString();
         List<Medication> medicationList = objectMapper.readValue(medicationListString, new TypeReference<>() {
@@ -108,11 +135,13 @@ class DroneApplicationTests {
 
     @Test
     public void getAvailableForLoading() throws Exception {
-        DroneCreateRequest droneCreateRequest1 = new DroneCreateRequest(SERIAL_NUMBER + 1, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
+        DroneCreateRequest droneCreateRequest1 =
+                new DroneCreateRequest(SERIAL_NUMBER + 1, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
         registerDrone(droneCreateRequest1);
         loadDrone(SERIAL_NUMBER + 1, 200, 300);
 
-        DroneCreateRequest droneCreateRequest2 = new DroneCreateRequest(SERIAL_NUMBER + 2, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
+        DroneCreateRequest droneCreateRequest2 =
+                new DroneCreateRequest(SERIAL_NUMBER + 2, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
         registerDrone(droneCreateRequest2);
         loadDrone(SERIAL_NUMBER + 2, 200, 100);
 
@@ -130,6 +159,9 @@ class DroneApplicationTests {
     public void getBatteryLevel() throws Exception {
         registerDrone();
 
-        mockMvc.perform(get("/drones/" + SERIAL_NUMBER + "/battery")).andExpect(status().isOk()).andExpect(content().string(containsString("" + BATTERY_CAPACITY)));
+        mockMvc.perform(
+                        get("/drones/" + SERIAL_NUMBER + "/battery")
+                ).andExpect(status().isOk())
+                .andExpect(content().string(containsString("" + BATTERY_CAPACITY)));
     }
 }
