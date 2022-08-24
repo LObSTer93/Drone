@@ -17,4 +17,6 @@ public interface DroneService {
     Set<Drone> getAvailableForLoading();
 
     int getBatteryLevel(String serialNumber);
+
+    Set<Drone> getAll();
 }

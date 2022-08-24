@@ -30,7 +30,7 @@ public class DroneServiceImpl implements DroneService {
 
     @Override
     public Drone create(String serialNumber, String model, int weightLimit, int batteryCapacity, DroneState droneState) {
-        if(LOADING == droneState && batteryCapacity < 25) {
+        if (LOADING == droneState && batteryCapacity < 25) {
             throw new RuntimeException(String.format(INIT_ERROR, serialNumber));
         }
         DroneDao droneDao = new DroneDao(serialNumber, model, weightLimit, batteryCapacity, droneState, new LinkedList<>());
@@ -84,5 +84,12 @@ public class DroneServiceImpl implements DroneService {
     public int getBatteryLevel(String serialNumber) {
         DroneDao droneDao = droneRepository.findBySerialNumber(serialNumber).orElseThrow();
         return droneDao.batteryCapacity();
+    }
+
+    @Override
+    public Set<Drone> getAll() {
+        return droneRepository.findAll().stream()
+                .map(droneMapper::daoToModel)
+                .collect(Collectors.toSet());
     }
 }
