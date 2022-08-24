@@ -20,8 +20,8 @@ public class DroneController {
     @PostMapping()
     public Drone register(@RequestBody DroneCreateRequest droneCreateRequest) {
         return droneService.create(
-                droneCreateRequest.serialNumber(), droneCreateRequest.model(),
-                droneCreateRequest.weightLimit(), droneCreateRequest.batteryCapacity()
+                droneCreateRequest.serialNumber(), droneCreateRequest.model(), droneCreateRequest.weightLimit(),
+                droneCreateRequest.batteryCapacity(), droneCreateRequest.droneState()
         );
     }
 

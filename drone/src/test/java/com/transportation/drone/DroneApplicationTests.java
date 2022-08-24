@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.transportation.drone.controller.request.DroneCreateRequest;
 import com.transportation.drone.data.DroneRepository;
 import com.transportation.drone.model.Drone;
+import com.transportation.drone.model.DroneState;
 import com.transportation.drone.model.Medication;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.transportation.drone.model.DroneState.LOADING;
+import static com.transportation.drone.service.impl.DroneServiceImpl.INIT_ERROR;
 import static com.transportation.drone.service.impl.DroneServiceImpl.LOAD_ERROR;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -29,7 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class DroneApplicationTests {
 
     @Autowired
@@ -60,8 +62,22 @@ class DroneApplicationTests {
         assertEquals(BATTERY_CAPACITY, drone.batteryCapacity());
     }
 
+    @Test
+    public void registerError() throws Exception {
+        try {
+            registerDrone(LOADING, 24);
+        } catch (Exception e) {
+            assertTrue(e.getCause() instanceof RuntimeException);
+            assertEquals(String.format(INIT_ERROR, SERIAL_NUMBER), e.getCause().getLocalizedMessage());
+        }
+    }
+
     private Drone registerDrone() throws Exception {
-        DroneCreateRequest droneCreateRequest = new DroneCreateRequest(SERIAL_NUMBER, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
+        return registerDrone(DroneState.IDLE, BATTERY_CAPACITY);
+    }
+
+    private Drone registerDrone(DroneState droneState, int batteryCapacity) throws Exception {
+        DroneCreateRequest droneCreateRequest = new DroneCreateRequest(SERIAL_NUMBER, MODEL, WEIGHT_LIMIT, batteryCapacity, droneState);
         return registerDrone(droneCreateRequest);
     }
 
@@ -83,7 +99,6 @@ class DroneApplicationTests {
 
         Drone drone = loadDrone();
         assertEquals(2, drone.medicationList().size());
-        loadDrone();
     }
 
     @Test
@@ -91,7 +106,7 @@ class DroneApplicationTests {
         registerDrone();
 
         try {
-            Drone drone = loadDrone(SERIAL_NUMBER, 300, 300);
+            loadDrone(SERIAL_NUMBER, 300, 300);
         } catch (Exception e) {
             assertTrue(e.getCause() instanceof RuntimeException);
             assertEquals(String.format(LOAD_ERROR, SERIAL_NUMBER), e.getCause().getLocalizedMessage());
@@ -136,12 +151,12 @@ class DroneApplicationTests {
     @Test
     public void getAvailableForLoading() throws Exception {
         DroneCreateRequest droneCreateRequest1 =
-                new DroneCreateRequest(SERIAL_NUMBER + 1, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
+                new DroneCreateRequest(SERIAL_NUMBER + 1, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY, DroneState.IDLE);
         registerDrone(droneCreateRequest1);
         loadDrone(SERIAL_NUMBER + 1, 200, 300);
 
         DroneCreateRequest droneCreateRequest2 =
-                new DroneCreateRequest(SERIAL_NUMBER + 2, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY);
+                new DroneCreateRequest(SERIAL_NUMBER + 2, MODEL, WEIGHT_LIMIT, BATTERY_CAPACITY, DroneState.IDLE);
         registerDrone(droneCreateRequest2);
         loadDrone(SERIAL_NUMBER + 2, 200, 100);
 

@@ -3,6 +3,7 @@ package com.transportation.drone.service.impl;
 import com.transportation.drone.data.DroneRepository;
 import com.transportation.drone.data.dao.DroneDao;
 import com.transportation.drone.model.Drone;
+import com.transportation.drone.model.DroneState;
 import com.transportation.drone.model.Medication;
 import com.transportation.drone.service.DroneService;
 import com.transportation.drone.util.DroneMapper;
@@ -15,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.transportation.drone.model.DroneState.LOADING;
+
 @Service
 @RequiredArgsConstructor
 public class DroneServiceImpl implements DroneService {
@@ -23,10 +26,14 @@ public class DroneServiceImpl implements DroneService {
     private final DroneMapper droneMapper;
 
     public static final String LOAD_ERROR = "The drone with serial number %s can not carry the added load";
+    public static final String INIT_ERROR = "The drone with serial number %s having LOADING state and battery level bellow 25 can not be initialized";
 
     @Override
-    public Drone create(String serialNumber, String model, int weightLimit, int batteryCapacity) {
-        DroneDao droneDao = new DroneDao(serialNumber, model, weightLimit, batteryCapacity, new LinkedList<>());
+    public Drone create(String serialNumber, String model, int weightLimit, int batteryCapacity, DroneState droneState) {
+        if(LOADING == droneState && batteryCapacity < 25) {
+            throw new RuntimeException(String.format(INIT_ERROR, serialNumber));
+        }
+        DroneDao droneDao = new DroneDao(serialNumber, model, weightLimit, batteryCapacity, droneState, new LinkedList<>());
         droneDao = droneRepository.insert(droneDao);
         return droneMapper.daoToModel(droneDao);
     }
